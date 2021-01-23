@@ -1,26 +1,12 @@
 from typing import Union, List
-import types
 from pathlib import Path
-from itertools import chain
 import functools
 import re
 from collections import namedtuple
 
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import (
-    ArrayType,
-    BinaryType,
-    BooleanType,
-    DateType,
-    MapType,
-    NullType,
-    NumericType,
-    StringType,
-    StructType,
-    TimestampType,
-    UserDefinedType,
-)
+from pyspark.sql.types import StructType
 
 
 def namedtuple_from_schema(schema: StructType, name: str):
