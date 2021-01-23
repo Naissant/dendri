@@ -187,7 +187,7 @@ def stage_dataframe_to_disk(
     def decorator_to_disk(func):
         @functools.wraps(func)
         def wrapper_to_disk(
-            *args, cached_file_path=cached_file_path, overwrite=overwrite, **kwargs
+            *args, cached_file_path=cached_file_path, overwrite=overwrite, **kwargs,
         ):
             cached_file_path = Path(cached_file_path)
             spark = SparkSession.getActiveSession()
@@ -204,9 +204,7 @@ def stage_dataframe_to_disk(
 
 
 def set_column_order(
-    df: F.DataFrame,
-    column_order: list,
-    remove_unlisted: bool = False,
+    df: F.DataFrame, column_order: list, remove_unlisted: bool = False,
 ):
     """
     Set the column order for a DataFrame to a desired order.
