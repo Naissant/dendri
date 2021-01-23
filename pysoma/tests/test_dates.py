@@ -52,7 +52,7 @@ date_segment_schema = StructType(
     ]
 )
 
-date_segment_tuple = namedtuple_from_schema(date_segment_schema)
+date_segment_tuple = namedtuple_from_schema(date_segment_schema, "date_segment_tuple")
 
 entity_id = "001"
 entity_1 = EntityDateSegmentData(
@@ -71,4 +71,3 @@ entity_1 = EntityDateSegmentData(
         ),
     ]
 )
-``
