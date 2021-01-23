@@ -40,8 +40,6 @@ def spark_getOrCreate(
         SparkSession
     """
 
-    extra_jars_dir = Path(__file__).parent / "jars"
-
     sess = (
         SparkSession.builder.appName(app_name)
         .config("spark.driver.memory", driver_memory)
