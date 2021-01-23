@@ -1,5 +1,3 @@
-from typing import Union
-from pathlib import Path
 import logging
 
 from pyspark.sql import SparkSession
