@@ -5,24 +5,9 @@ import pyspark.sql.functions as F
 from pyspark.sql.types import (
     StructField,
     ArrayType,
-    BinaryType,
-    BooleanType,
-    ByteType,
-    DecimalType,
-    DoubleType,
-    FloatType,
-    FractionalType,
-    IntegerType,
-    IntegralType,
     LongType,
-    MapType,
-    NullType,
-    NumericType,
     StringType,
     StructType,
-    TimestampType,
-    UserDefinedType,
-    ShortType,
 )
 
 from pysoma.conftest import ensure_clean_dir
