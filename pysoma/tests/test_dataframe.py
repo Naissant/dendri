@@ -169,7 +169,7 @@ def test_string_to_column_name():
             "Partial Hospitalization/Intensive Outpatient",
             "partial_hospitalization_intensive_outpatient",
         ),
-        ("HbA1c Level 7.0-9.0", "hba1c_level_7_0_9_0",),
+        ("HbA1c Level 7.0-9.0", "hba1c_level_7_0_9_0"),
     ]
 
     expected = [x[1] for x in start_end_tuple]
