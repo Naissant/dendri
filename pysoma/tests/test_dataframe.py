@@ -26,6 +26,7 @@ from pysoma.dataframe import (
     set_column_order,
     rename_by_dict,
     outer_union_corr,
+    array_isin,
 )
 
 
@@ -257,3 +258,33 @@ def test_outer_union_corr(spark_context):
     res = outer_union_corr(sdf1, sdf2).select("col1", "col2", "col3", "col4", "col5")
 
     assert sorted(res.collect()) == sorted(expected_output.collect())
+
+
+class TestArrayIsin:
+    def test_array_isin(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            [
+                (1, 2, 3, True),
+                (4, 5, 6, False),
+            ],
+            ["col1", "col2", "col3", "col4"],
+        ).select(F.array("col1", "col2", "col3").alias("array_col"), "col4")
+
+        res = sdf.drop("col4").select(array_isin("array_col", [1, 7, 8]))
+        exp = sdf.drop("array_col")
+
+        assert sorted(res.collect()) == sorted(exp.collect())
+
+    def test_array_isin_requires_all(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            [
+                (1, 2, 3, True),
+                (4, 5, 6, False),
+            ],
+            ["col1", "col2", "col3", "col4"],
+        ).select(F.array("col1", "col2", "col3").alias("array_col"), "col4")
+
+        res = sdf.drop("col4").select(array_isin("array_col", [1, 3], True))
+        exp = sdf.drop("array_col")
+
+        assert sorted(res.collect()) == sorted(exp.collect())

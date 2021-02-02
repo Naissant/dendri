@@ -369,3 +369,33 @@ def col_to_list(df: DataFrame, col: str) -> list:
         A list
     """
     return list(df.select(col).toPandas()[col])
+
+
+def array_isin(
+    array_col: str, values: Union[str, list], require_all: bool = False
+) -> Column:
+    """
+    Check if one or more array values are in user-supplied list.
+
+    Args:
+        array_col: Array column name
+        values: List of values to check
+        require_all (optional): If True, requires the array to contain all values.
+            Defaults to False.
+
+    Returns:
+        Column of BooleanType()
+    """
+    if isinstance(values, str):
+        condition = F.array_contains(F.col(array_col), F.lit(values))
+    else:
+        condition = F.array_contains(F.col(array_col), F.lit(values[0]))
+
+    if len(values) > 1:
+        for v in values[1:]:
+            if require_all:
+                condition = condition & (F.array_contains(F.col(array_col), F.lit(v)))
+            else:
+                condition = condition | (F.array_contains(F.col(array_col), F.lit(v)))
+
+    return condition
