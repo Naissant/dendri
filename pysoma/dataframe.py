@@ -5,101 +5,143 @@ import re
 from collections import namedtuple
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import SparkSession, DataFrame, Column
 from pyspark.sql.types import StructType
 
 
 def namedtuple_from_schema(schema: StructType, name: str):
-    """Convert a PySpark schema into a named tuple."""
+    """
+    Convert a PySpark schema into a named tuple
+
+    Args:
+        schema: PySpark schema
+        name: Name of namedtuple
+
+    Returns:
+        namedtuple representation of PySpark schema
+    """
     return namedtuple(name, schema.names, defaults=(None,) * len(schema.names))
 
 
-def cols_to_array(
-    df, array_name: str, columns: Union[str, List[str]], remove_na: bool = True
-):
+def cols_to_array(cols: Union[str, List[str]], remove_na: bool = True) -> Column:
     """
-    Returns an array named `array_name` containing the values from provided `columns`.
+    Create a column of ArrayType() from user-supplied column list.
 
     Args:
-        df (pyspark.sql.DataFrame)
+        cols: List of columns to create array from
+        remove_na (optional): Remove nulls from array. Defaults to True.
+
+    Returns:
+        Column of ArrayType()
     """
-    array_column = F.array([F.col(x) for x in columns])
+    # Force cols to list
+    if isinstance(cols, str):
+        cols = [cols]
+
+    array_col = F.array([F.col(x) for x in cols])
 
     if remove_na:
-        return df.withColumn(
-            array_name, F.array_except(array_column, F.array(F.lit(None)))
-        )
-    else:
-        return df.withColumn(array_name, array_column)
+        array_col = F.array_except(array_col, F.array(F.lit(None)))
+
+    return array_col
 
 
-def two_columns_to_dictionary(df, key_col_name, value_col_name):
+def cols_to_dict(df: DataFrame, key_col_name: str, value_col_name: str) -> dict:
     """
-    Creates dict from pair of columns.
+    Creates a dictionary from pair of columns.
+
+    Args:
+        df: PySpark DataFrame
+        key_col_name: Column name to use as dict key
+        value_col_name: Column name to use as dict value
+
+    Returns:
+        A dict of the two DataFrame columns
     """
     k, v = key_col_name, value_col_name
     return {x[k]: x[v] for x in df.select(k, v).collect()}
 
 
-def dict_to_map_literal(mapping: dict):
+def dict_to_map(mapping: dict) -> Column:
     """
-    Create Spark map literal from dict of k-v pairs.
+    Create a PySpark map literal from dict of k-v pairs.
+
+    Args:
+        mapping: Mapping dict
+
+    Returns:
+        PySpark Column of MapType()
     """
-    # create_map requires a list of values
-    # [1, 2, 3, 4] will map 1=>2 and 3=>4
-    # ["A", "a", "B", "b"] will map "A"->"a" and "B"->"b"
-    # ["A", ["ah", "bah"]] will map "A"->array("ah", "bah")
-    # All literal values need to be wrapped with F.lit(literal-value)
     literal_list = []
+
     for k, v in mapping.items():
         literal_list.append(F.lit(k))
-        if isinstance(v, (str, int, float)):
+        if isinstance(v, (str, int, float, bool)):
             literal_list.append(F.lit(v))
-        elif isinstance(v, list):
+        elif isinstance(v, (list, tuple, set)):
             literal_list.append(F.array([F.lit(x) for x in v]))
+
     return F.create_map(literal_list)
 
 
-def map_column(column, mapping_expression):
+def map_column(col_name: str, mapping: Union[Column, dict]) -> Column:
     """
     Apply mapping expression to column.
+
+    Args:
+        col_name: Name of column to map values
+        mapping: MapType() column or dict with desired mapping
+
+    Returns:
+        Column with mapped values
     """
-    return mapping_expression[F.col(column)]
+    if isinstance(mapping, dict):
+        mapping = dict_to_map(mapping)
+
+    return mapping[F.col(col_name)]
 
 
 class DataFrameMissingColumnError(ValueError):
-    """raise this when there's a DataFrame column error"""
+    """Raise this when there's a missing DataFrame column"""
 
 
 class DataFrameMissingStructFieldError(ValueError):
-    """raise this when there's a DataFrame column error"""
+    """Raise this when there's a missing DataFrame StructField"""
 
 
 class DataFrameProhibitedColumnError(ValueError):
-    """raise this when a DataFrame includes prohibited columns"""
+    """Raise this when a DataFrame includes prohibited columns"""
 
 
-def validate_presence_of_columns(df, required_col_names):
+def validate_presence_of_columns(df: DataFrame, required_col_names: List[str]):
     """
     Validate DataFrame contains listed columns.
+
+    Args:
+        df: PySpark DataFrame to check columns
+        required_col_names: List of column names to validate
+
+    Raises:
+        DataFrameMissingColumnError: If DataFrame is missing a required column
     """
-    all_col_names = df.columns
-    missing_col_names = [x for x in required_col_names if x not in all_col_names]
+    missing_cols = [x for x in required_col_names if x not in df.columns]
+
     error_message = (
-        f"The {missing_col_names} columns are not included in the DataFrame "
-        f"with the following columns {all_col_names}"
+        "The following columns are not included in the DataFrame:"
+        f" {', '.join(missing_cols)}"
     )
-    if missing_col_names:
+
+    if missing_cols:
         raise DataFrameMissingColumnError(error_message)
 
 
-def validate_schema(df, required_schema):
+def validate_schema(df: DataFrame, required_schema: StructType):
     """
     Raises Error if df schema does not match required schema.
 
     Args:
-        df: pyspark.sql.DataFrame
-        required_schema: [pyspark.sql.types.StructField, ...]
+        df: PySpark DataFrame to validate schema
+        required_schema: Required schema
 
     Example:
         data = [("jose", 1), ("li", 2), ("luisa", 3)]
@@ -112,36 +154,53 @@ def validate_schema(df, required_schema):
         )
         # Raises Error, as "city" does not exist, but "age" does.
         validate_schema(source_df, required_schema)
+
+    Raises:
+        DataFrameMissingStructFieldError: If DataFrame is missing a StructField
     """
-    all_struct_fields = df.schema
-    missing_struct_fields = [x for x in required_schema if x not in all_struct_fields]
+    missing_struct_fields = [x for x in required_schema if x not in df.schema]
+
     error_message = (
-        f"The {missing_struct_fields} StructFields are not included in the "
-        f"DataFrame with the following StructFields {all_struct_fields}"
+        "The following StructFields are not included in the DataFrame:"
+        f" {missing_struct_fields}"
     )
+
     if missing_struct_fields:
         raise DataFrameMissingStructFieldError(error_message)
 
 
-def validate_absence_of_columns(df, prohibited_col_names: list):
+def validate_absence_of_columns(df: DataFrame, prohibited_col_names: List[str]):
     """
     Validate DataFrame does not contain listed columns.
+
+    Args:
+        df: PySpark DataFrame to check columns
+        prohibited_col_names: List of column names to validate
+
+    Raises:
+        DataFrameProhibitedColumnError: If DataFrame is includes a prohibited column
     """
-    all_col_names = df.columns
-    extra_col_names = [x for x in all_col_names if x in prohibited_col_names]
+    extra_cols = [x for x in prohibited_col_names if x in df.columns]
+
     error_message = (
-        f"The {extra_col_names} columns are not allowed to be included in the "
-        f"DataFrame with the following columns {all_col_names}"
+        "The following columns are not allowed to be included in the DataFrame:"
+        f" {', '.join(extra_cols)}"
     )
-    if extra_col_names:
+
+    if extra_cols:
         raise DataFrameProhibitedColumnError(error_message)
 
 
-def string_to_column_name(x: str):
+def string_to_column_name(x: str) -> str:
     """
-    Converts non-alphanumeric characters to "_" and lowercases string.
+    Converts non-alphanumeric characters to "_" and lowercases string. Repeated
+    non-alphanumeric characters are replaced with a single "_".
 
-    Repeated non-alphanumeric characters are replaced with a single "_".
+    Args:
+        x: String to convert to column name
+
+    Returns:
+        Re-formatted string for using as a PySpark DataFrame column name
     """
     return re.sub("[^0-9a-zA-Z]+", "_", x).lower()
 
@@ -190,26 +249,24 @@ def stage_dataframe_to_disk(
 
 
 def set_column_order(
-    df: F.DataFrame, column_order: list, remove_unlisted: bool = False
-):
+    df: DataFrame, column_order: list, remove_unlisted: bool = False
+) -> DataFrame:
     """
-    Set the column order for a DataFrame to a desired order.
-    DataFrame colums not in column_order will be placed at the end of the DataFrame.
+    Set the column order for a DataFrame to a desired order. DataFrame colums not in
+    column_order will be placed at the end of the DataFrame.
 
     Args:
         df: DataFrame to reorder columns.
         column_order: List of column names in desired order.
-
-    Optional Args:
         remove_unlisted: Remove columns from DataFrame if not in supplied column list.
             Default: False.
 
     Returns:
-        DataFrame: DataFrame with columns in desired order.
+        DataFrame with columns in desired order.
     """
 
     # Type check the inputs
-    if not isinstance(df, (F.DataFrame)):
+    if not isinstance(df, DataFrame):
         raise TypeError("df must be a Spark DataFrame.")
     if not isinstance(column_order, list):
         raise TypeError("column_order must be a list" f"{column_order} was supplied")
@@ -230,15 +287,27 @@ def set_column_order(
     return df.select(ordered_columns)
 
 
-def rename_by_dict(sdf, renames: dict):
-    """Renames DataFrame columns if they exist as keys in `renames`"""
+def rename_by_dict(df: DataFrame, renames: dict) -> DataFrame:
+    """
+    Renames DataFrame columns according to dictionary
 
-    # TODO(WES): Using .select([loop-through-select-or-rename]) will save some CPU
+    Args:
+        df: PySpark DataFrame
+        renames: Dictionary of renames in {existing: new} format
 
-    cols_to_rename = [x for x in sdf.columns if x in renames.keys()]
-    for col in cols_to_rename:
-        sdf = sdf.withColumnRenamed(col, renames[col])
-    return sdf
+    Returns:
+        DataFrame with column names updated
+    """
+
+    col_list = []
+
+    for column in df.columns:
+        if column in renames.keys():
+            col_list.append(F.col(column).alias(renames[column]))
+        else:
+            col_list.append(F.col(column))
+
+    return df.select(col_list)
 
 
 def outer_union_corr(*dfs: DataFrame) -> DataFrame:
@@ -250,7 +319,7 @@ def outer_union_corr(*dfs: DataFrame) -> DataFrame:
     function returns all columns from all DataFrames.
 
     Args:
-        dfs (DataFrame): Sequence of DataFrames to union
+        dfs: Sequence of DataFrames to union
 
     Returns:
         DataFrame
@@ -272,3 +341,31 @@ def outer_union_corr(*dfs: DataFrame) -> DataFrame:
             _df = _df.unionByName(__df)
 
     return _df
+
+
+def col_to_set(df: DataFrame, col: str) -> set:
+    """
+    Returns a set from specified column of DataFrame
+
+    Args:
+        df: PySpark DataFrame
+        col: Name of column
+
+    Returns:
+        A set
+    """
+    return set(df.select(col).distinct().toPandas()[col])
+
+
+def col_to_list(df: DataFrame, col: str) -> list:
+    """
+    Returns a list from specified column of DataFrame
+
+    Args:
+        df: PySpark DataFrame
+        col: Name of column
+
+    Returns:
+        A list
+    """
+    return list(df.select(col).toPandas()[col])

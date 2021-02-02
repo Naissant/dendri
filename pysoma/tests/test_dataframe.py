@@ -13,8 +13,8 @@ from pyspark.sql.types import (
 from pysoma.conftest import ensure_clean_dir
 from pysoma.dataframe import (
     cols_to_array,
-    two_columns_to_dictionary,
-    dict_to_map_literal,
+    cols_to_dict,
+    dict_to_map,
     DataFrameMissingColumnError,
     DataFrameMissingStructFieldError,
     DataFrameProhibitedColumnError,
@@ -34,29 +34,27 @@ def test_cols_to_array(spark_context):
         [("001", "11", "12", ["11", "12"]), ("002", "11", None, ["11"])],
         schema=["id", "col1", "col2", "array_col"],
     )
-    res = cols_to_array(
-        sdf.drop("array_col"), array_name="array_col", columns=["col1", "col2"]
-    )
+    res = sdf.withColumn("array_col", cols_to_array(["col1", "col2"]))
 
     assert sorted(sdf.collect()) == sorted(res.collect())
 
 
-def test_two_columns_to_dictionary():
+def test_cols_to_dict():
     def it_returns_a_dictionary(spark_context):
         data = [("jose", 1), ("li", 2), ("luisa", 3)]
         source_df = spark_context.createDataFrame(data, ["name", "age"])
-        actual = two_columns_to_dictionary(source_df, "name", "age")
+        actual = cols_to_dict(source_df, "name", "age")
         assert {"jose": 1, "li": 2, "luisa": 3} == actual
 
 
-class TestDictToMapLiteral:
-    def test_dict_to_map_literal_basic(self, spark_context):
+class TestDictToMap:
+    def test_dict_to_map_basic(self, spark_context):
         sdf = spark_context.createDataFrame(
             [("1", "A"), ("2", "B")], schema=["id", "val"]
         )
 
         mapping_basic = {"A": "a", "B": "b"}
-        map_literal = dict_to_map_literal(mapping_basic)
+        map_literal = dict_to_map(mapping_basic)
 
         res = sdf.withColumn("mapped", map_literal[F.col("val")])
 
@@ -66,13 +64,13 @@ class TestDictToMapLiteral:
 
         assert sorted(res.collect()) == sorted(exp.collect())
 
-    def test_dict_to_map_literal_nested(self, spark_context):
+    def test_dict_to_map_nested(self, spark_context):
         sdf = spark_context.createDataFrame(
             [("1", "A"), ("2", "B")], schema=["id", "val"]
         )
 
         mapping_basic = {"A": ["a", "ah"], "B": ["b", "bah"]}
-        map_literal = dict_to_map_literal(mapping_basic)
+        map_literal = dict_to_map(mapping_basic)
 
         res = sdf.withColumn("mapped", map_literal[F.col("val")])
 
@@ -97,8 +95,7 @@ class TestValidatePresenceOfColumns:
         with pytest.raises(DataFrameMissingColumnError) as excinfo:
             validate_presence_of_columns(source_df, ["name", "age", "fun"])
         assert excinfo.value.args[0] == (
-            "The ['fun'] columns are not included in the DataFrame with the following "
-            "columns ['name', 'age']"
+            "The following columns are not included in the DataFrame: fun"
         )
 
     def test_it_does_nothing_if_all_required_columns_are_present(self, spark_context):
@@ -120,10 +117,8 @@ class TestValidateSchema:
         with pytest.raises(DataFrameMissingStructFieldError) as excinfo:
             validate_schema(source_df, required_schema)
         assert excinfo.value.args[0] == (
-            "The [StructField(city,StringType,true)] StructFields are not included "
-            "in the DataFrame with the following StructFields "
-            "StructType(List(StructField(name,StringType,true),"
-            "StructField(age,LongType,true)))"
+            "The following StructFields are not included in the DataFrame:"
+            " [StructField(city,StringType,true)]"
         )
 
     def test_it_does_nothing_when_the_schema_matches(self, spark_context):
@@ -145,8 +140,7 @@ class TestValidateAbsenseOfColumns:
         with pytest.raises(DataFrameProhibitedColumnError) as excinfo:
             validate_absence_of_columns(source_df, ["age", "cool"])
         assert excinfo.value.args[0] == (
-            "The ['age'] columns are not allowed to be included in the DataFrame "
-            "with the following columns ['name', 'age']"
+            "The following columns are not allowed to be included in the DataFrame: age"
         )
 
     def test_it_does_nothing_when_no_unallowed_columns_are_present(self, spark_context):
