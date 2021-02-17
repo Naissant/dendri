@@ -23,20 +23,22 @@ def namedtuple_from_schema(schema: StructType, name: str):
     return namedtuple(name, schema.names, defaults=(None,) * len(schema.names))
 
 
-def cols_to_array(cols: Union[str, List[str]], remove_na: bool = True) -> Column:
+def cols_to_array(*cols, remove_na: bool = True) -> Column:
     """
     Create a column of ArrayType() from user-supplied column list.
 
     Args:
-        cols: List of columns to create array from
+        cols: columns to convert into array.
         remove_na (optional): Remove nulls from array. Defaults to True.
 
     Returns:
         Column of ArrayType()
     """
-    # Force cols to list
-    if isinstance(cols, str):
-        cols = [cols]
+    # consolidate *cols into list(cols)
+    if len(cols) > 1 or isinstance(cols[0], str):
+        cols = [col for col in cols]
+    elif len(cols) == 1 and isinstance(cols[0], (list, tuple, set)):
+        cols = [col for col in cols[0]]
 
     array_col = F.array([F.col(x) for x in cols])
 

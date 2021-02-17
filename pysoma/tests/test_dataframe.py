@@ -30,14 +30,49 @@ from pysoma.dataframe import (
 )
 
 
-def test_cols_to_array(spark_context):
-    sdf = spark_context.createDataFrame(
-        [("001", "11", "12", ["11", "12"]), ("002", "11", None, ["11"])],
-        schema=["id", "col1", "col2", "array_col"],
-    )
-    res = sdf.withColumn("array_col", cols_to_array(["col1", "col2"]))
+class TestColsToArray:
 
-    assert sorted(sdf.collect()) == sorted(res.collect())
+    input_data = [
+        ("001", "11", "12", ["11", "12"]),
+        ("002", "11", None, ["11"]),
+    ]
+    input_schema = ["id", "col1", "col2", "array_col"]
+
+    def test_cols_to_array_cols_as_args(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = sdf.withColumn("array_col", cols_to_array("col1", "col2"))
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_cols_to_array_cols_as_list(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = sdf.withColumn("array_col", cols_to_array(["col1", "col2"]))
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_cols_to_array_cols_as_set(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = sdf.withColumn("array_col", F.array_sort(cols_to_array({"col1", "col2"})))
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_cols_to_array_single_col(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=[
+                ("001", "11", "12", ["12"]),
+                ("002", "11", None, []),
+            ],
+            schema=self.input_schema,
+        )
+        res = sdf.withColumn("array_col", cols_to_array("col2"))
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
 
 
 def test_cols_to_dict():
