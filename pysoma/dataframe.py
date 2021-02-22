@@ -43,7 +43,7 @@ def cols_to_array(*cols, remove_na: bool = True) -> Column:
     array_col = F.array([F.col(x) for x in cols])
 
     if remove_na:
-        array_col = F.array_except(array_col, F.array(F.lit(None)))
+        array_col = F.expr(f'filter(array({", ".join(cols)}), x -> x IS NOT NULL)')
 
     return array_col
 

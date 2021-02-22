@@ -74,6 +74,32 @@ class TestColsToArray:
 
         assert sorted(sdf.collect()) == sorted(res.collect())
 
+    def test_cols_to_array_does_not_remove_duplicates(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=[
+                ("1", 1, 2, 3, 4, [1, 2, 3, 4]),
+                ("2", 1, 1, 1, 1, [1, 1, 1, 1]),
+                ("3", 1, 2, None, None, [1, 2]),
+                ("4", 1, 1, None, None, [1, 1]),
+            ],
+            schema=StructType(
+                [
+                    StructField("id", StringType()),
+                    StructField("col1", LongType()),
+                    StructField("col2", LongType()),
+                    StructField("col3", LongType()),
+                    StructField("col4", LongType()),
+                    StructField("col_arr", ArrayType(LongType())),
+                ]
+            ),
+        )
+
+        res = sdf.withColumn(
+            "col_arr", cols_to_array("col1", "col2", "col3", "col4", remove_na=True)
+        )
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
 
 def test_cols_to_dict():
     def it_returns_a_dictionary(spark_context):
