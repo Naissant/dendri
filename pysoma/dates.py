@@ -2,7 +2,6 @@ from typing import Union, List
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
-import pandas as pd
 from pyspark.sql import DataFrame, Column
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
