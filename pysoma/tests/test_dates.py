@@ -2,7 +2,6 @@ from datetime import date
 
 import pytest
 import pyspark.sql.functions as F
-import pandas as pd
 
 from pysoma.dates import (
     condense_segments,
@@ -10,7 +9,6 @@ from pysoma.dates import (
     covered_days,
     first_event_in_x_days,
     count_events_by_period,
-    date_to_iso_string,
     age,
 )
 
@@ -432,20 +430,6 @@ def test_first_event_in_x_days(spark_context):
     )
 
     assert sorted(res.collect()) == sorted(input_df.collect())
-
-
-@pytest.mark.parametrize(
-    "dt, expected_output",
-    [
-        ("2018-12-31", "2018-12-31 00:00:00"),
-        ("12/31/2018", "2018-12-31 00:00:00"),
-        (d("2018-12-31"), "2018-12-31 00:00:00"),
-        (pd.to_datetime("2018-12-31"), "2018-12-31 00:00:00"),
-        (pd.to_datetime("12/31/2018"), "2018-12-31 00:00:00"),
-    ],
-)
-def test_date_to_iso_string(dt, expected_output):
-    assert date_to_iso_string(dt) == expected_output
 
 
 def test_count_events_by_period(

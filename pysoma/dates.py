@@ -463,38 +463,6 @@ def count_events_by_period(
     return df.groupBy(group_col).agg(*agg_func)
 
 
-def date_to_iso_string(dt) -> str:
-    """
-    Convert supplied date to ISO format.
-
-    Examples
-    --------
-
-    ```python
-    >> date_to_iso_string("2018-12-31")
-    "2018-12-31 00:00:00"
-
-    >> date_to_iso_string("12/31/2018")
-    "2018-12-31 00:00:00"
-
-    >> date_to_iso_string(pd.to_datetime("2018-12-31"))
-    "2018-12-31 00:00:00"
-
-    >> date_to_iso_string(pd.to_datetime("12/31/2018"))
-    "2018-12-31 00:00:00"
-    ```
-
-    """
-    # cast them all to datetime and then convert to ISO string
-    if isinstance(dt, pd.Timestamp):
-        dt = dt.to_pydatetime()
-    elif isinstance(dt, str):
-        # pandas is used to read the string - Pandas is pretty smart about this
-        dt = pd.to_datetime(dt).to_pydatetime()
-
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def age(
     dob_col: str,
     age_dt: Union[str, date, Column],
