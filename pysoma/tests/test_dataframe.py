@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import pytest
 import pyspark.sql.functions as F
@@ -349,3 +350,83 @@ class TestArrayIsin:
         exp = sdf.drop("array_col")
 
         assert sorted(res.collect()) == sorted(exp.collect())
+
+
+def test_saveParquetTable(spark_context):
+    with ensure_clean_dir() as tmpdir:
+        tmpdir = Path(tmpdir)
+        tmp_parquet_path = tmpdir / "tmp.parquet"
+
+        # Create test df
+        df = spark_context.createDataFrame(
+            data=[(1, 2, 3), (1, 2, 4), (2, 3, 1), (3, 3, 1)],
+            schema=["col1", "col2", "col3"],
+        )
+
+        # Write df
+        df.saveParquetTable(
+            table_name="tmp",
+            file_path=str(tmp_parquet_path),
+            partition_cols="col1",
+            bucket_cols="col2",
+            bucket_size=1,
+            sort_cols="col3",
+        )
+
+        # Expected metatdata
+        exp_meta = {
+            "partition_cols": "col1",
+            "bucket_cols": "col2",
+            "bucket_size": 1,
+            "sort_cols": "col3",
+            "schema": [["col1", "bigint"], ["col2", "bigint"], ["col3", "bigint"]],
+        }
+
+        assert tmp_parquet_path.exists()
+        assert isinstance(
+            spark_context.read.parquet(str(tmp_parquet_path)), F.DataFrame
+        )
+
+        # Acutal metadata
+        with open(tmp_parquet_path / "_pysoma_metadata", "r") as f:
+            res_meta = json.load(f)
+
+        assert res_meta == exp_meta
+
+        # Delete PySpark table
+        spark_context.sql("DROP TABLE tmp")
+
+
+def test_readParquetTable(spark_context):
+    with ensure_clean_dir() as tmpdir:
+        tmpdir = Path(tmpdir)
+        tmp_parquet_path = tmpdir / "tmp.parquet"
+
+        # Create test df
+        exp_df = spark_context.createDataFrame(
+            data=[(1, 2, 3), (1, 2, 4), (2, 3, 1), (3, 3, 1)],
+            schema=["col1", "col2", "col3"],
+        )
+
+        # Write df
+        exp_df.saveParquetTable(
+            table_name="tmp",
+            file_path=str(tmp_parquet_path),
+            partition_cols="col1",
+            bucket_cols="col2",
+            bucket_size=1,
+            sort_cols="col3",
+        )
+
+        # Delete PySpark table
+        spark_context.sql("DROP TABLE tmp")
+
+        # Read df
+        res_df = spark_context.readParquetTable(
+            table_name="tmp", file_path=str(tmp_parquet_path)
+        ).select("col1", "col2", "col3")
+
+        assert sorted(res_df.collect()) == sorted(exp_df.collect())
+
+        # Delete PySpark table
+        spark_context.sql("DROP TABLE tmp")

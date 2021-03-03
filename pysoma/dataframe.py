@@ -2,6 +2,7 @@ from typing import Union, List
 from pathlib import Path
 import functools
 import re
+import json
 from collections import namedtuple
 
 import pyspark.sql.functions as F
@@ -401,3 +402,171 @@ def array_isin(
                 condition = condition | (F.array_contains(F.col(array_col), F.lit(v)))
 
     return condition
+
+
+def saveParquetTable(
+    self,
+    table_name: str,
+    file_path: Union[str, Path],
+    partition_cols: Union[List[str], str] = None,
+    bucket_cols: Union[List[str], str] = None,
+    bucket_size: int = None,
+    sort_cols: Union[List[str], str] = None,
+    write_mode="overwrite",
+) -> None:
+    """
+    Saves a DataFrame using the saveAsTable method and writes necessary metadata to the
+    parquet file as _pysoma_metadata. This metadata is used when calling
+    `readParquetTable` to return a DataFrame that retains information about bucketing.
+
+    Args:
+        table_name: Name of table to create
+        file_path: Path to save table
+        partition_cols (optional): Columns to partition by. Defaults to None.
+        bucket_cols (optional): Columns to bucket by. Defaults to None.
+        bucket_size (optional): Number of buckets per partition. Defaults to None.
+        sort_cols (optional): Columns to sort each bucket by. Only supports ascending
+            order. Defaults to None.
+        write_mode (optional): Mode to use when calling `saveAsTable`. Defaults to
+            "overwrite".
+    """
+    if isinstance(file_path, Path):
+        file_path = str(file_path)
+
+    if partition_cols is not None:
+        save_builder = self.repartition(partition_cols).write.partitionBy(
+            partition_cols
+        )
+    else:
+        save_builder = self.write
+
+    if bucket_cols is not None:
+        save_builder = save_builder.bucketBy(bucket_size, bucket_cols)
+
+    if sort_cols is not None:
+        save_builder = save_builder.sortBy(sort_cols)
+
+    save_builder.option("path", file_path).saveAsTable(
+        table_name, format="parquet", mode=write_mode
+    )
+
+    # Create dictionary of metadata
+    meta_dict = {
+        "partition_cols": partition_cols,
+        "bucket_cols": bucket_cols,
+        "bucket_size": bucket_size,
+        "sort_cols": sort_cols,
+        "schema": self.dtypes,
+    }
+
+    # Write metadata to parquet file
+    with open(f"{file_path}/_pysoma_metadata", "w") as f:
+        json.dump(meta_dict, f, indent=4)
+
+
+def _convert_dtypes_to_str(x: list) -> str:
+    return ", ".join([f"{i[0]} {i[1]}" for i in x])
+
+
+def _convert_list_to_str(x: Union[str, list]) -> str:
+    if isinstance(x, list):
+        x = ", ".join(x)
+
+    return x
+
+
+def _sql_builder(
+    file: str,
+    table: str,
+    schema: str,
+    partition_cols: str,
+    bucket_cols: str,
+    bucket_size: str,
+    sort_cols: str,
+) -> str:
+    create_table = f"CREATE TABLE IF NOT EXISTS {table} ({schema}) USING PARQUET "
+
+    if partition_cols != "None":
+        partition_by = f"PARTITIONED BY ({partition_cols}) "
+    else:
+        partition_by = ""
+
+    if bucket_cols != "None":
+        clustered_by = f"CLUSTERED BY ({bucket_cols}) "
+    else:
+        clustered_by = ""
+
+    if sort_cols != "None":
+        sorted_by = f"SORTED BY ({sort_cols}) "
+    else:
+        sorted_by = ""
+
+    if bucket_size != "None":
+        into_buckets = f"INTO {bucket_size} BUCKETS "
+    else:
+        into_buckets = ""
+
+    location = f"LOCATION '{file}'"
+
+    sql = (
+        create_table + partition_by + clustered_by + sorted_by + into_buckets + location
+    )
+
+    return sql
+
+
+def readParquetTable(self, file_path: Union[str, Path], table_name: str) -> DataFrame:
+    """
+    Reads parquet files using the PySpark Table API to return a DataFrame with bucketing
+    information retained. Bucketing info is only kept when writing the DataFrame using
+    the `saveParquetTable` method.
+
+    Args:
+        file_path: Path to parquet file
+        table_name: Name of table to create when reading parquet file
+
+    Returns:
+        DataFrame
+    """
+    if isinstance(file_path, Path):
+        file_path = str(file_path)
+
+    meta_file = f"{file_path}/_pysoma_metadata"
+
+    if Path(meta_file).exists():
+        with open(meta_file, "r") as f:
+            meta_dict = json.load(f)
+
+        # Extract metadata and convert to strings needed for CREATE TABLE SQL
+        partition_cols = _convert_list_to_str(meta_dict["partition_cols"])
+        bucket_cols = _convert_list_to_str(meta_dict["bucket_cols"])
+        bucket_size = _convert_list_to_str(meta_dict["bucket_size"])
+        sort_cols = _convert_list_to_str(meta_dict["sort_cols"])
+        schema = _convert_dtypes_to_str(meta_dict["schema"])
+
+        # Build the CREATE TABLE SQL
+        sql = _sql_builder(
+            file_path,
+            table_name,
+            schema,
+            partition_cols,
+            bucket_cols,
+            bucket_size,
+            sort_cols,
+        )
+
+        self.sql(sql)
+
+        # Need to register partitions with Hive manually
+        if partition_cols != "None":
+            self.sql(f"MSCK REPAIR TABLE {table_name}")
+
+        df = self.table(table_name)
+    else:
+        df = self.read.parquet(file_path)
+
+    return df
+
+
+DataFrame.saveParquetTable = saveParquetTable
+SparkSession.readParquetTable = readParquetTable
