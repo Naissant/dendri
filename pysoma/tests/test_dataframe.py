@@ -430,3 +430,35 @@ def test_readParquetTable(spark_context):
 
         # Delete PySpark table
         spark_context.sql("DROP TABLE tmp")
+
+
+def test_readParquetTable_no_bucket(spark_context):
+    with ensure_clean_dir() as tmpdir:
+        tmpdir = Path(tmpdir)
+        tmp_parquet_path = tmpdir / "tmp.parquet"
+
+        # Create test df
+        exp_df = spark_context.createDataFrame(
+            data=[(1, 2, 3), (1, 2, 4), (2, 3, 1), (3, 3, 1)],
+            schema=["col1", "col2", "col3"],
+        )
+
+        # Write df
+        exp_df.saveParquetTable(
+            table_name="tmp",
+            file_path=str(tmp_parquet_path),
+            partition_cols="col1",
+        )
+
+        # Delete PySpark table
+        spark_context.sql("DROP TABLE tmp")
+
+        # Read df
+        res_df = spark_context.readParquetTable(
+            table_name="tmp", file_path=str(tmp_parquet_path)
+        ).select("col1", "col2", "col3")
+
+        assert sorted(res_df.collect()) == sorted(exp_df.collect())
+
+        # Delete PySpark table
+        spark_context.sql("DROP TABLE tmp")

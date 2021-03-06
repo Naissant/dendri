@@ -471,6 +471,8 @@ def _convert_dtypes_to_str(x: list) -> str:
 def _convert_list_to_str(x: Union[str, list]) -> str:
     if isinstance(x, list):
         x = ", ".join(x)
+    else:
+        x = str(x)
 
     return x
 
