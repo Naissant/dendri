@@ -1,0 +1,9 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - init: pip install -e .
+  - command: jupyter notebook --NotebookApp.allow_origin=\'$(gp url 8888)\'
+    name: Jupyter
+  - command: >
+    name: Terminal
