@@ -9,6 +9,7 @@ from pyspark.sql.types import (
     LongType,
     StringType,
     StructType,
+    MapType,
 )
 
 from pysoma.conftest import ensure_clean_dir
@@ -98,6 +99,40 @@ class TestColsToArray:
         res = sdf.withColumn(
             "col_arr", cols_to_array("col1", "col2", "col3", "col4", remove_na=True)
         )
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_cols_to_array_accepts_Column_type(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = sdf.withColumn("array_col", cols_to_array(F.col("col1"), F.col("col2")))
+
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_cols_to_array_accepts_column_with_maps(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            [
+                ("1", 1, 2, {"a": 5}, [1, 5]),
+                ("2", 1, 2, {"a": 6}, [1, 6]),
+                ("3", 1, 2, {"b": 7}, [1])
+                # black ..............
+            ],
+            StructType(
+                [
+                    StructField("id", StringType()),
+                    StructField("col1", LongType()),
+                    StructField("col2", LongType()),
+                    StructField(
+                        "col3",
+                        MapType(StringType(), LongType()),
+                    ),
+                    StructField("array_col", ArrayType(LongType())),
+                ]
+            ),
+        )
+
+        res = sdf.withColumn("array_col", cols_to_array("col1", F.col("col3")["a"]))
 
         assert sorted(sdf.collect()) == sorted(res.collect())
 
