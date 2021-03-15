@@ -1,5 +1,12 @@
 from setuptools import setup
 
+dev_requires = [
+    "pytest",
+]
+extras = {
+    "dev": dev_requires,
+}
+
 setup(
     name="pysoma",
     version="0.0.1",
@@ -8,7 +15,8 @@ setup(
     license="MIT",
     packages=["pysoma"],
     install_requires=["pyspark>=3.0.0"],
-    tests_require=["pytest"],
+    dev_requires=["pytest"],
+    extras_require=extras,
     classifiers=[
         "Development Status:: 2 - Pre-Alpha",
         "Intended Audience :: Healthcare Industry",

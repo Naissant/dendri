@@ -2,7 +2,7 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
-  - init: pip install -e . && pre-commit install
+  - init: pip install -e .[dev] && pre-commit install
   - command: jupyter notebook --NotebookApp.allow_origin=\'$(gp url 8888)\'
     name: Jupyter
   - command: >
