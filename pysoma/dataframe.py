@@ -6,7 +6,9 @@ import json
 from collections import namedtuple
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession, DataFrame, Column
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.column import Column
+
 from pyspark.sql.types import StructType
 
 
@@ -35,18 +37,10 @@ def cols_to_array(*cols, remove_na: bool = True) -> Column:
     Returns:
         Column of ArrayType()
     """
-    # consolidate *cols into list(cols)
-    if len(cols) > 1 or isinstance(cols[0], str):
-        cols = [col for col in cols]
-    elif len(cols) == 1 and isinstance(cols[0], (list, tuple, set)):
-        cols = [col for col in cols[0]]
-
-    array_col = F.array([F.col(x) for x in cols])
-
     if remove_na:
-        array_col = F.expr(f'filter(array({", ".join(cols)}), x -> x IS NOT NULL)')
-
-    return array_col
+        return F.filter(F.array(*cols), lambda x: x.isNotNull())
+    else:
+        return F.array(*cols)
 
 
 def cols_to_dict(df: DataFrame, key_col_name: str, value_col_name: str) -> dict:
