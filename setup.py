@@ -14,7 +14,7 @@ setup(
     author="PySoma Authors",
     license="MIT",
     packages=["pysoma"],
-    install_requires=["pyspark>=3.0.0"],
+    install_requires=["pyspark>=3.1.1"],
     dev_requires=["pytest"],
     extras_require=extras,
     classifiers=[
