@@ -410,7 +410,7 @@ def saveParquetTable(
 ) -> None:
     """
     Saves a DataFrame using the saveAsTable method and writes necessary metadata to the
-    parquet file as _pysoma_metadata. This metadata is used when calling
+    parquet file as _dendri_metadata. This metadata is used when calling
     `readParquetTable` to return a DataFrame that retains information about bucketing.
 
     Args:
@@ -454,7 +454,7 @@ def saveParquetTable(
     }
 
     # Write metadata to parquet file
-    with open(f"{file_path}/_pysoma_metadata", "w") as f:
+    with open(f"{file_path}/_dendri_metadata", "w") as f:
         json.dump(meta_dict, f, indent=4)
 
 
@@ -527,7 +527,7 @@ def readParquetTable(self, file_path: Union[str, Path], table_name: str) -> Data
     if isinstance(file_path, Path):
         file_path = str(file_path)
 
-    meta_file = f"{file_path}/_pysoma_metadata"
+    meta_file = f"{file_path}/_dendri_metadata"
 
     if Path(meta_file).exists():
         with open(meta_file, "r") as f:

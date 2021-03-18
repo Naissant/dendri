@@ -7,7 +7,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.types import ArrayType, BooleanType, DateType, ShortType, FloatType
 
-from pysoma.dataframe import set_column_order
+from dendri.dataframe import set_column_order
 
 
 def condense_segments(

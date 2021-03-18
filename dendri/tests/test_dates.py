@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 import pyspark.sql.functions as F
 
-from pysoma.dates import (
+from dendri.dates import (
     condense_segments,
     extend_segments,
     covered_days,

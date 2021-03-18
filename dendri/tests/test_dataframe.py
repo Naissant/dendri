@@ -12,8 +12,8 @@ from pyspark.sql.types import (
     MapType,
 )
 
-from pysoma.conftest import ensure_clean_dir
-from pysoma.dataframe import (
+from dendri.conftest import ensure_clean_dir
+from dendri.dataframe import (
     cols_to_array,
     cols_to_dict,
     dict_to_map,
@@ -423,7 +423,7 @@ def test_saveParquetTable(spark_context):
         )
 
         # Acutal metadata
-        with open(tmp_parquet_path / "_pysoma_metadata", "r") as f:
+        with open(tmp_parquet_path / "_dendri_metadata", "r") as f:
             res_meta = json.load(f)
 
         assert res_meta == exp_meta

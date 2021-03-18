@@ -8,12 +8,12 @@ extras = {
 }
 
 setup(
-    name="pysoma",
+    name="dendri",
     version="0.0.1",
-    description="Library for common healthcare related features.",
-    author="PySoma Authors",
+    description="Library for common healthcare related algorithms.",
+    author="Dendri Authors",
     license="MIT",
-    packages=["pysoma"],
+    packages=["dendri"],
     install_requires=["pyspark>=3.1.1"],
     dev_requires=["pytest"],
     extras_require=extras,

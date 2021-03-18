@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from pysoma.utils import spark_getOrCreate, quiet_py4j
+from dendri.utils import spark_getOrCreate, quiet_py4j
 
 
 @pytest.fixture(scope="session")
