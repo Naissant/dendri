@@ -8,6 +8,6 @@ A pre-configured Github Action is triggered when a tagged commit is pushed.
 
 ```bash
 git commit -m "message"
-git tag v1.2.3
+git tag 1.2.3
 git push --tags
 ```
