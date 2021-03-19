@@ -1,14 +1,6 @@
-from typing import Dict
 from setuptools import setup
 
-
-def get_version() -> str:
-    version: Dict[str, str] = {}
-    with open("dendri/version.py") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
-
-    return version["__version__"]
-
+import versioneer
 
 dev_requires = ["pytest", "black", "flake8", "pre-commit"]
 extras = {
@@ -17,7 +9,8 @@ extras = {
 
 setup(
     name="dendri",
-    version=get_version(),
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="Dendri Authors",
     author_email="wesr000@gmail.com",
     description="Library for common healthcare related algorithms.",
