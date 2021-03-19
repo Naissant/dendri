@@ -2,9 +2,9 @@ name: pytest
 
 on:
   push:
-    branches: main
+    branches: [main]
   pull_request:
-    branches: main
+    branches: [main]
 
 jobs:
   build:
@@ -21,12 +21,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest pyspark pandas
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       - name: Install Java
         uses: actions/setup-java@v1
         with:
@@ -34,9 +28,10 @@ jobs:
           java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
           architecture: x64 # (x64 or x86) - defaults to x64
 
-      - name: Install Dendri
+      - name: Install Development Dendri
         run: |
-          python -m pip install -e .
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
 
       - name: Test with pytest
         run: |
