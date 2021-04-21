@@ -15,6 +15,10 @@ A pre-configured Github Action is triggered when a tagged commit is pushed.
 
 ```bash
 git commit -m "message"
+git push
+# Wait for tests to complete before tagging commit and pushing tag.
 git tag 1.2.3
 git push --tags
 ```
+
+Useful: [https://stackoverflow.com/questions/3745135/push-git-commits-tags-simultaneously](https://stackoverflow.com/questions/3745135/push-git-commits-tags-simultaneously)

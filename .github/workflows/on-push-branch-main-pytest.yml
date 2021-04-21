@@ -1,38 +1,28 @@
-name: pytest
+name: Main-PyTest
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  build:
+  pytest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
-
     steps:
       - uses: actions/checkout@v2
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Java
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11 # The JDK version to make available on the path.
-          java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
-          architecture: x64 # (x64 or x86) - defaults to x64
-
-      - name: Install Development Dendri
+      - name: Install Development Gami
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
-
+      - name: github.ref
+        run: |
+          echo "github.ref: ${{ github.ref }}"
       - name: Test with pytest
         run: |
           pytest -v

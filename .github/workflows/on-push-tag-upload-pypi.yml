@@ -1,0 +1,117 @@
+name: Tag-Upload-PyPI
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish-pypi-test:
+    name: Build and Publish to Test PyPI
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install build tools
+        run: >-
+          python -m
+          pip install
+          build
+
+      - name: Build a binary wheel and a source tarball
+        run: >-
+          python -m
+          build
+          --sdist
+          --wheel
+          --outdir dist/
+          .
+
+      - name: github.ref
+        run: |
+          echo "github.ref: ${{ github.ref }}"
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+  install-pypi-test:
+    name: Install from Test PyPI
+    needs: publish-pypi-test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: pip install gami
+        run: |
+          pip install -i https://test.pypi.org/simple/ gami
+      - name: Test gami install
+        run: |
+          echo "import gami" | python
+
+  publish-pypi-prod:
+    name: Build and Publish to Prod PyPI
+    needs: install-pypi-test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install build tools
+        run: >-
+          python -m
+          pip install
+          build
+
+      - name: Build a binary wheel and a source tarball
+        run: >-
+          python -m
+          build
+          --sdist
+          --wheel
+          --outdir dist/
+          .
+
+      - name: github.ref
+        run: |
+          echo "github.ref: ${{ github.ref }}"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  install-pypi-prod:
+    name: Install from Prod PyPI
+    needs: publish-pypi-prod
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: pip install gami
+        run: |
+          pip install gami
+      - name: Test gami install
+        run: |
+          echo "import gami" | python
