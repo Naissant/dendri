@@ -1,7 +1,7 @@
 # dendri
 
-[![pytest](https://github.com/GDITHealth/dendri/workflows/pytest/badge.svg)](https://github.com/GDITHealth/dendri/actions?query=workflow%3Apytest)
-[![Linting](https://github.com/GDITHealth/dendri/workflows/Linting/badge.svg)](https://github.com/GDITHealth/dendri/actions?query=workflow%3ALinting)
+[![PyTest](https://github.com/GDITHealth/dendri/actions/workflows/on-push-branch-main-pytest.yml/badge.svg)](https://github.com/GDITHealth/dendri/actions/workflows/on-push-branch-main-pytest.yml)
+[![Linting](https://github.com/GDITHealth/dendri/actions/workflows/on-push-branch-main-formatting.yml/badge.svg)](https://github.com/GDITHealth/dendri/actions/workflows/on-push-branch-main-formatting.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GDITHealth/dendri/blob/main/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
