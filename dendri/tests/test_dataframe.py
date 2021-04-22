@@ -10,6 +10,21 @@ from pyspark.sql.types import (
     StringType,
     StructType,
     MapType,
+    BinaryType,
+    BooleanType,
+    ByteType,
+    DateType,
+    DecimalType,
+    DoubleType,
+    FloatType,
+    FractionalType,
+    IntegerType,
+    IntegralType,
+    NullType,
+    NumericType,
+    TimestampType,
+    UserDefinedType,
+    ShortType,
 )
 
 from dendri.conftest import ensure_clean_dir
@@ -29,7 +44,33 @@ from dendri.dataframe import (
     rename_by_dict,
     outer_union_corr,
     array_isin,
+    validate_config_path,
+    # show_by_type,
+    # get_dataframe,
+    data_template_from_schema,
 )
+
+
+def test_validate_config_path():
+    validate_config_path(Path("df.config.json"))
+
+
+def test_validate_config_path_raises():
+    with pytest.raises(ValueError):
+        validate_config_path("df.json.config")
+    with pytest.raises(ValueError):
+        validate_config_path("df.json.config")
+    with pytest.raises(ValueError):
+        validate_config_path("json.config")
+    with pytest.raises(ValueError):
+        validate_config_path("df._.json")
+    with pytest.raises(ValueError):
+        validate_config_path("df.config._")
+
+
+@pytest.mark.skip(reason="Not tested...")
+def test_show_by_type():
+    pass
 
 
 class TestColsToArray:
@@ -497,3 +538,48 @@ def test_readParquetTable_no_bucket(spark_context):
 
         # Delete PySpark table
         spark_context.sql("DROP TABLE tmp")
+
+
+@pytest.mark.skip(reason="Not tested...")
+def test_get_dataframe():
+    pass
+
+
+def test_data_template_from_schema(spark_context):
+    schema = StructType(
+        [
+            StructField("ArrayType(String)", ArrayType(StringType(), True), True),
+            StructField("BinaryType", BinaryType(), True),
+            StructField("BooleanType", BooleanType(), True),
+            StructField("ByteType", ByteType(), True),
+            StructField("DateType", DateType(), True),
+            StructField("DecimalType", DecimalType(), True),
+            StructField("DoubleType", DoubleType(), True),
+            StructField("FloatType", FloatType(), True),
+            StructField("FractionalType", FractionalType(), True),
+            StructField("IntegerType", IntegerType(), True),
+            StructField("IntegralType", IntegralType(), True),
+            StructField("LongType", LongType(), True),
+            StructField("MapType", MapType(StringType(), StringType()), True),
+            StructField("NullType", NullType(), True),
+            StructField("NumericType", NumericType(), True),
+            StructField("StringType", StringType(), True),
+            StructField("StructType", StructType(), True),
+            StructField("TimestampType", TimestampType(), True),
+            StructField("UserDefinedType", UserDefinedType(), True),
+            StructField("ShortType", ShortType(), True),
+        ]
+    )
+
+    exp = (
+        "ArrayType(String), BinaryType, BooleanType, ByteType, DateType, DecimalType, "
+        "DoubleType, FloatType, FractionalType, IntegerType, IntegralType, LongType, "
+        "MapType, NullType, NumericType, StringType, StructType, TimestampType, "
+        "UserDefinedType, ShortType\n"
+        '(["String?"], b"", True False, ByteType, date.fromisoformat(""), '
+        "DecimalType(10,0), DoubleType, FloatType, FractionalType, IntegerType, "
+        'IntegralType, LongType, {"": ""}, None, NumericType, "String", {"": ""}, '
+        'datetime.fromisoformat(""), UDT(), ShortType)'
+    )
+    res = data_template_from_schema(schema)
+    assert res == exp

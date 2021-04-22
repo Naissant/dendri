@@ -1,15 +1,65 @@
-from typing import Union, List
-from pathlib import Path
-import functools
 import re
 import json
+import types
+import functools
+from pathlib import Path
+from typing import Union, List
 from collections import namedtuple
 
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.column import Column
+from pyspark.sql.types import (
+    StructField,
+    ArrayType,
+    LongType,
+    StringType,
+    StructType,
+    MapType,
+    BinaryType,
+    BooleanType,
+    ByteType,
+    DecimalType,
+    DoubleType,
+    DateType,
+    FloatType,
+    FractionalType,
+    IntegerType,
+    IntegralType,
+    NullType,
+    NumericType,
+    TimestampType,
+    UserDefinedType,
+    ShortType,
+)
 
 from pyspark.sql.types import StructType
+
+
+def validate_config_path(path: Union[str, Path]):
+    """
+    Pending deprecation.
+    """
+    path = Path(path)
+
+    # validate user-supplied path
+    #   - Must end with '.config.json'
+    name_parts = path.resolve().name.split(".")
+    if name_parts[-1] != "json" or name_parts[-2] != "config":
+        raise ValueError(
+            "path to dataframe config file must end with '.config.json'\n"
+            f"path: {path.resolve()}"
+        )
+
+
+def show_by_type(sdf: DataFrame, dtype: str, *args, **kwargs):
+    """
+    .show() columns of provided dtype
+
+    Engine: Spark
+    """
+    columnList = [item[0] for item in sdf.dtypes if item[1].startswith(dtype)]
+    sdf.select(columnList).show(*args, **kwargs)
 
 
 def namedtuple_from_schema(schema: StructType, name: str):
@@ -243,6 +293,40 @@ def stage_dataframe_to_disk(
         return wrapper_to_disk
 
     return decorator_to_disk
+
+
+def data_template_from_schema(schema: StructType):
+    """Returns a hand-fillable template based on supplied schema."""
+    header_string = ""
+    output = "("
+    for field in schema.fields:
+        if isinstance(field.dataType, StringType):
+            output += '"String", '
+        elif isinstance(field.dataType, DateType):
+            output += 'date.fromisoformat(""), '
+        elif isinstance(field.dataType, TimestampType):
+            output += 'datetime.fromisoformat(""), '
+        elif isinstance(field.dataType, ArrayType):
+            output += '["String?"], '
+        elif isinstance(field.dataType, (MapType, StructType)):
+            output += '{"": ""}, '
+        elif isinstance(field.dataType, BinaryType):
+            output += 'b"", '
+        elif isinstance(field.dataType, BooleanType):
+            output += "True False, "
+        elif isinstance(field.dataType, NumericType):
+            output += f"{field.dataType}, "
+        elif isinstance(field.dataType, NullType):
+            output += "None, "
+        elif isinstance(field.dataType, UserDefinedType):
+            output += "UDT(), "
+        else:
+            # Something numeric
+            output += "Error, "
+        header_string += field.name + ", "
+    header_string = header_string[:-2]
+    output = output[:-2] + ")"
+    return header_string + "\n" + output
 
 
 def set_column_order(
@@ -566,3 +650,21 @@ def readParquetTable(self, file_path: Union[str, Path], table_name: str) -> Data
 
 DataFrame.saveParquetTable = saveParquetTable
 SparkSession.readParquetTable = readParquetTable
+
+
+def get_dataframe(obj):
+    """Attempts to return a Spark DataFrame from supplied reference."""
+    spark = SparkSession.getActiveSession()
+    if isinstance(obj, str):
+        return spark.read.parquet(obj)
+    if isinstance(obj, Path):
+        return spark.read.parquet(str(obj))
+    if isinstance(obj, DataFrame):
+        return obj
+    if isinstance(obj, types.FunctionType):
+        return obj()
+    if isinstance(obj, types.MethodType):
+        # NOTE(Wes): Not 100% sure on this one.
+        return obj()
+    # Return whatever it is and let the end user figure it out (None, perhaps?)
+    return obj
