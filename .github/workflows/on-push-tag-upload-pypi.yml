@@ -55,8 +55,12 @@ jobs:
         with:
           python-version: 3.7
       - name: pip install dendri
-        run: |
-          pip install -i https://test.pypi.org/simple/ dendri
+        run: >-
+          python -m
+          pip install
+          --index-url https://test.pypi.org/simple
+          --extra-index-url https://pypi.org/simple
+          dendri
       - name: Test dendri install
         run: |
           echo "import dendri" | python
