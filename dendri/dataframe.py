@@ -10,30 +10,18 @@ import pyspark.sql.functions as F
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.column import Column
 from pyspark.sql.types import (
-    StructField,
     ArrayType,
-    LongType,
     StringType,
     StructType,
     MapType,
     BinaryType,
     BooleanType,
-    ByteType,
-    DecimalType,
-    DoubleType,
     DateType,
-    FloatType,
-    FractionalType,
-    IntegerType,
-    IntegralType,
     NullType,
     NumericType,
     TimestampType,
     UserDefinedType,
-    ShortType,
 )
-
-from pyspark.sql.types import StructType
 
 
 def validate_config_path(path: Union[str, Path]):
