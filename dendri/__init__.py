@@ -1,6 +1,5 @@
 # Make modules available
 from . import dataframe
-from . import conftest
 from . import dates
 from . import utils
 
