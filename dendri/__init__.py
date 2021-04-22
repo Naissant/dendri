@@ -1,3 +1,10 @@
+# Make modules available
+from . import dataframe
+from . import conftest
+from . import dates
+from . import utils
+
+# Shortcut specific functionality
 from dendri.dataframe import SparkSession, DataFrame
 
 from ._version import get_versions
