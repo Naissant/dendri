@@ -583,7 +583,9 @@ def _sql_builder(
     return sql
 
 
-def readParquetTable(self, file_path: Union[str, Path], table_name: str) -> DataFrame:
+def readParquetTable(
+    self, file_path: Union[str, Path], table_name: str = None
+) -> DataFrame:
     """
     Reads parquet files using the PySpark Table API to return a DataFrame with bucketing
     information retained. Bucketing info is only kept when writing the DataFrame using
@@ -596,6 +598,9 @@ def readParquetTable(self, file_path: Union[str, Path], table_name: str) -> Data
     Returns:
         DataFrame
     """
+    if table_name is None:
+        table_name = Path(file_path).stem
+
     if isinstance(file_path, Path):
         file_path = str(file_path)
 
@@ -640,13 +645,16 @@ DataFrame.saveParquetTable = saveParquetTable
 SparkSession.readParquetTable = readParquetTable
 
 
-def get_dataframe(obj):
+def get_dataframe(obj) -> DataFrame:
     """Attempts to return a Spark DataFrame from supplied reference."""
     spark = SparkSession.getActiveSession()
-    if isinstance(obj, str):
-        return spark.read.parquet(obj)
+
+    # Cast Path to str
     if isinstance(obj, Path):
-        return spark.read.parquet(str(obj))
+        obj = str(obj)
+
+    if isinstance(obj, str):
+        return spark.readParquetTable(obj)
     if isinstance(obj, DataFrame):
         return obj
     if isinstance(obj, types.FunctionType):

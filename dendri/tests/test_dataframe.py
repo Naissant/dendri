@@ -3,6 +3,7 @@ import json
 
 import pytest
 import pyspark.sql.functions as F
+from pyspark.sql import DataFrame
 from pyspark.sql.types import (
     StructField,
     ArrayType,
@@ -46,7 +47,7 @@ from dendri.dataframe import (
     array_isin,
     validate_config_path,
     # show_by_type,
-    # get_dataframe,
+    get_dataframe,
     data_template_from_schema,
 )
 
@@ -540,9 +541,116 @@ def test_readParquetTable_no_bucket(spark_context):
         spark_context.sql("DROP TABLE tmp")
 
 
-@pytest.mark.skip(reason="Not tested...")
-def test_get_dataframe():
-    pass
+class TestGetDataFrame:
+
+    dataframe = {
+        "data": [(1, 2, 3), (1, 2, 4), (2, 3, 1), (3, 3, 1)],
+        "schema": ["col1", "col2", "col3"],
+    }
+
+    def test_get_dataframe_str(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+        with ensure_clean_dir() as dir:
+            dir = Path(dir)
+            sdf_path = dir / "sdf.parquet"
+            sdf.write.parquet(str(sdf_path))
+            res = get_dataframe(str(sdf_path))
+
+            assert sorted(res.collect()) == sorted(sdf.collect())
+
+    def test_get_dataframe_Path(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+        with ensure_clean_dir() as dir:
+            dir = Path(dir)
+            sdf_path = dir / "sdf.parquet"
+            sdf.write.parquet(str(sdf_path))
+            res = get_dataframe(sdf_path)
+
+            assert sorted(res.collect()) == sorted(sdf.collect())
+
+    def test_get_dataframe_Path_saveParquetTable(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+        with ensure_clean_dir() as dir:
+            dir = Path(dir)
+
+            # Save DataFrame using saveParquetTable, with buckets and partitions
+            sdf_path = dir / "sdf.parquet"
+            sdf.saveParquetTable(
+                table_name="tmp",
+                file_path=str(sdf_path),
+                partition_cols="col1",
+                bucket_cols="col2",
+                bucket_size=1,
+                sort_cols="col3",
+            )
+
+            # Read DataFrame back into Spark
+            # Additional select necessary for comparison
+            # - partitioned columns are moved to the far right of the DataFrame on read
+            res = get_dataframe(sdf_path).select(self.dataframe["schema"])
+
+            assert sorted(res.collect()) == sorted(sdf.collect())
+
+    def test_get_dataframe_DataFrame(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+        res = get_dataframe(sdf)
+        assert isinstance(res, DataFrame)
+
+    def test_get_dataframe_FunctionType(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+
+        def function_that_returns_DataFrame() -> DataFrame:
+            return spark_context.createDataFrame(**self.dataframe)
+
+        res = get_dataframe(function_that_returns_DataFrame)
+        assert sorted(sdf.collect()) == sorted(res.collect())
+
+    def test_get_dataframe_MethodType(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+
+        class ClassContainingMethods:
+            dataframe = self.dataframe
+
+            def method_returns_DataFrame(self):
+                return spark_context.createDataFrame(**self.dataframe)
+
+        instance = ClassContainingMethods()
+        res = get_dataframe(instance.method_returns_DataFrame)
+        assert sorted(res.collect()) == sorted(sdf.collect())
+
+    def test_get_dataframe_MethodType_staticmethod(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+
+        class ClassContainingMethods:
+            dataframe = self.dataframe
+
+            @staticmethod
+            def method_returns_DataFrame():
+                return spark_context.createDataFrame(**self.dataframe)
+
+        res = get_dataframe(ClassContainingMethods.method_returns_DataFrame)
+        assert sorted(res.collect()) == sorted(sdf.collect())
+
+        instance = ClassContainingMethods()
+        res = get_dataframe(instance.method_returns_DataFrame)
+        assert sorted(res.collect()) == sorted(sdf.collect())
+
+    def test_get_dataframe_MethodType_classmethod(self, spark_context):
+        sdf = spark_context.createDataFrame(**self.dataframe)
+
+        class ClassContainingMethods:
+            dataframe = self.dataframe
+
+            @classmethod
+            def method_returns_DataFrame(cls):
+                return spark_context.createDataFrame(**cls.dataframe)
+
+        res = get_dataframe(ClassContainingMethods.method_returns_DataFrame)
+        assert sorted(res.collect()) == sorted(sdf.collect())
+
+        instance = ClassContainingMethods()
+        res = get_dataframe(instance.method_returns_DataFrame)
+        assert sorted(res.collect()) == sorted(sdf.collect())
 
 
 def test_data_template_from_schema(spark_context):
