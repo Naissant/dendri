@@ -49,6 +49,7 @@ from dendri.dataframe import (
     # show_by_type,
     get_dataframe,
     data_template_from_schema,
+    melt,
 )
 
 
@@ -108,10 +109,7 @@ class TestColsToArray:
 
     def test_cols_to_array_single_col(self, spark_context):
         sdf = spark_context.createDataFrame(
-            data=[
-                ("001", "11", "12", ["12"]),
-                ("002", "11", None, []),
-            ],
+            data=[("001", "11", "12", ["12"]), ("002", "11", None, []),],
             schema=self.input_schema,
         )
         res = sdf.withColumn("array_col", cols_to_array("col2"))
@@ -165,10 +163,7 @@ class TestColsToArray:
                     StructField("id", StringType()),
                     StructField("col1", LongType()),
                     StructField("col2", LongType()),
-                    StructField(
-                        "col3",
-                        MapType(StringType(), LongType()),
-                    ),
+                    StructField("col3", MapType(StringType(), LongType()),),
                     StructField("array_col", ArrayType(LongType())),
                 ]
             ),
@@ -402,11 +397,7 @@ def test_outer_union_corr(spark_context):
 class TestArrayIsin:
     def test_array_isin(self, spark_context):
         sdf = spark_context.createDataFrame(
-            [
-                (1, 2, 3, True),
-                (4, 5, 6, False),
-            ],
-            ["col1", "col2", "col3", "col4"],
+            [(1, 2, 3, True), (4, 5, 6, False),], ["col1", "col2", "col3", "col4"],
         ).select(F.array("col1", "col2", "col3").alias("array_col"), "col4")
 
         res = sdf.drop("col4").select(array_isin("array_col", [1, 7, 8]))
@@ -416,11 +407,7 @@ class TestArrayIsin:
 
     def test_array_isin_requires_all(self, spark_context):
         sdf = spark_context.createDataFrame(
-            [
-                (1, 2, 3, True),
-                (4, 5, 6, False),
-            ],
-            ["col1", "col2", "col3", "col4"],
+            [(1, 2, 3, True), (4, 5, 6, False),], ["col1", "col2", "col3", "col4"],
         ).select(F.array("col1", "col2", "col3").alias("array_col"), "col4")
 
         res = sdf.drop("col4").select(array_isin("array_col", [1, 3], True))
@@ -522,9 +509,7 @@ def test_readParquetTable_no_bucket(spark_context):
 
         # Write df
         exp_df.saveParquetTable(
-            table_name="tmp",
-            file_path=str(tmp_parquet_path),
-            partition_cols="col1",
+            table_name="tmp", file_path=str(tmp_parquet_path), partition_cols="col1",
         )
 
         # Delete PySpark table
@@ -691,3 +676,61 @@ def test_data_template_from_schema(spark_context):
     )
     res = data_template_from_schema(schema)
     assert res == exp
+
+
+class TestMelt:
+    input_data = [
+        ("001", 1, 2),
+        ("002", 2, 3),
+        ("002", 3, 4),
+    ]
+    input_schema = ["id", "col1", "col2"]
+
+    def test_melt_with_id(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = melt(sdf, melt_cols=["col1", "col2"], id_cols="id")
+        exp = spark_context.createDataFrame(
+            [
+                ("001", "col1", 1),
+                ("001", "col2", 2),
+                ("002", "col1", 2),
+                ("002", "col2", 3),
+                ("002", "col1", 3),
+                ("002", "col2", 4),
+            ],
+            ["id", "col", "val"],
+        )
+
+        assert sorted(exp.collect()) == sorted(res.collect())
+
+    def test_melt_no_id(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = melt(sdf, melt_cols=["col1", "col2"])
+        exp = spark_context.createDataFrame(
+            [
+                ("col1", 1),
+                ("col2", 2),
+                ("col1", 2),
+                ("col2", 3),
+                ("col1", 3),
+                ("col2", 4),
+            ],
+            ["col", "val"],
+        )
+
+        assert sorted(exp.collect()) == sorted(res.collect())
+
+    def test_melt_one_col(self, spark_context):
+        sdf = spark_context.createDataFrame(
+            data=self.input_data, schema=self.input_schema
+        )
+        res = melt(sdf, melt_cols="col2")
+        exp = spark_context.createDataFrame(
+            [("col2", 2), ("col2", 3), ("col2", 4)], ["col", "val"],
+        )
+
+        assert sorted(exp.collect()) == sorted(res.collect())

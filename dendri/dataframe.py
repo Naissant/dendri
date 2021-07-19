@@ -664,3 +664,50 @@ def get_dataframe(obj) -> DataFrame:
         return obj()
     # Return whatever it is and let the end user figure it out (None, perhaps?)
     return obj
+
+
+def melt(
+    df: DataFrame,
+    melt_cols: Union[List[str], str],
+    id_cols: Union[List[str], str, None] = None,
+    col_name: str = "col",
+    val_name: str = "val",
+) -> DataFrame:
+    """
+    Melt a DataFrame from wide to long format
+
+    Args:
+        df (DataFrame): DataFrame to melt
+        melt_cols (Union[List[str], str]): Columns to melt
+        id_cols (Union[List[str], str, None], optional): ID columns to not melt.
+            Defaults to None.
+        col_name (str, optional): Name of column containing original column names.
+            Defaults to "col".
+        val_name (str, optional): Name of column containing original values. Defaults to
+            "val".
+
+    Returns:
+        DataFrame: Melted DataFrame
+    """
+    if isinstance(id_cols, str):
+        id_cols = [id_cols]
+    if isinstance(melt_cols, str):
+        melt_cols = [melt_cols]
+
+    exploded_cols: Column = F.explode(
+        F.array(
+            *[
+                F.struct(F.lit(c).alias(col_name), F.col(c).alias(val_name))
+                for c in melt_cols
+            ]
+        )
+    ).alias("__col")
+
+    _df: DataFrame
+
+    if id_cols is None:
+        _df = df.select(exploded_cols).select(F.col("__col.*"))
+    else:
+        _df = df.select(*id_cols, exploded_cols).select(*id_cols, F.col("__col.*"))
+
+    return _df
