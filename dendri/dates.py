@@ -110,7 +110,7 @@ def extend_segments(
                 rolling_start_dt = dates[0]
                 rolling_end_dt = dates[1]
                 rolling_days = (rolling_end_dt - rolling_start_dt).days + 1
-            # 2nd+ segment: check if overlaps with rollingious segment
+            # 2nd+ segment: check if overlaps with rolling segment
             elif dates[0] <= rolling_end_dt + relativedelta(days=tolerance):
                 # If overlaps: update rolling segment by adding current segment's days
                 current_segment_days = (dates[1] - dates[0]).days + 1
@@ -192,7 +192,7 @@ def covered_days(
     covered_days_col_name: str = "covered_days",
 ) -> DataFrame:
     """
-    Count days covered by segments within provided winow. Days covered is calculated
+    Count days covered by segments within provided window. Days covered is calculated
     without condensing or expanding overlapping segments.
 
     Args:
