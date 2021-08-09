@@ -114,9 +114,9 @@ def dict_to_map(mapping: dict) -> Column:
         if isinstance(v, (str, int, float, bool)):
             literal_list.append(F.lit(v))
         elif isinstance(v, (list, tuple, set)):
-            literal_list.append(F.array([F.lit(x) for x in v]))
+            literal_list.append(F.array(*[F.lit(x) for x in v]))
 
-    return F.create_map(literal_list)
+    return F.create_map(*literal_list)
 
 
 def map_column(col_name: str, mapping: Union[Column, dict]) -> Column:
