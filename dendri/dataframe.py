@@ -387,27 +387,20 @@ def outer_union_corr(*dfs: DataFrame) -> DataFrame:
     distinct(). The difference between this function and unionByName() is that this
     function returns all columns from all DataFrames.
 
+    This is equivalent to chaining unionByName() with allowMissingColumns=True.
+
     Args:
         dfs: Sequence of DataFrames to union
 
     Returns:
         DataFrame
     """
-    # Identify all unique column names from all dfs
-    all_cols = set.union(*[set(i.columns) for i in dfs])
-
     for i, df in enumerate(dfs):
-        # Identify missing columns from each df
-        missing_cols = all_cols.difference(set(df.columns))
-
-        # Assign missing columns to each df with null values
-        __df = df.select("*", *[F.lit(None).alias(col) for col in missing_cols])
-
         # For first df, reassign to _df. Otherwise overwrite and union with _df
         if i == 0:
-            _df = __df
+            _df = df
         else:
-            _df = _df.unionByName(__df)
+            _df = _df.unionByName(df, allowMissingColumns=True)
 
     return _df
 
