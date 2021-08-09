@@ -704,3 +704,40 @@ def melt(
         _df = df.select(*id_cols, exploded_cols).select(*id_cols, F.col("__col.*"))
 
     return _df
+
+
+def merge_map_arrays(*cols: Union[str, Column]) -> Column:
+    """
+    Merge N-maps where the values are arrays by unioning them together.
+
+    Args:
+        cols (Union[str, Column]): List of columns of type Map(Any, Array) to combine
+
+    Returns:
+        Column: Merged maps of type Map(Any, Array)
+    """
+
+    if len(cols) < 2:
+        raise ValueError(
+            "Not enough values passed. merge_map_arrays must require at least 2 cols"
+        )
+
+    for i, col in enumerate(cols):
+        # Ensure columns do not contain nulls--must be an empty map
+        col = F.coalesce(col, F.create_map())
+
+        if i == 0:
+            merge_col = col
+        else:
+            # Merge maps based on key
+            # Values are arrays and will be unioned together
+            # map_zip_with defaults to null if missing key--coalesce with an empty array
+            merge_col = F.map_zip_with(
+                merge_col,
+                col,
+                lambda k, v1, v2: F.array_union(
+                    F.coalesce(v1, F.array()), F.coalesce(v2, F.array())
+                ),
+            )
+
+    return merge_col

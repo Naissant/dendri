@@ -50,6 +50,7 @@ from dendri.dataframe import (
     get_dataframe,
     data_template_from_schema,
     melt,
+    merge_map_arrays,
 )
 
 
@@ -737,3 +738,36 @@ class TestMelt:
         )
 
         assert sorted(exp.collect()) == sorted(res.collect())
+
+
+def test_merge_map_arrays(spark_context):
+    sdf = spark_context.createDataFrame(
+        data=[
+            ("01", {"a": [0, 1]}, {"a": [2, 3]}),
+            ("02", {"b": [0, 1]}, {"c": [0, 1]}),
+            ("03", {"d": [0, 1]}, {"d": [0, 1]}),
+            ("04", {"e": [0, 1]}, {"e": []}),
+            ("02", {"f": [0, 1], "g": [0, 1]}, {"f": [2, 3], "g": [2, 3]}),
+        ],
+        schema=["id", "map1", "map2"],
+    )
+    res = sdf.withColumn("merge", merge_map_arrays("map1", "map2"))
+    exp = spark_context.createDataFrame(
+        [
+            ("01", {"a": [0, 1]}, {"a": [2, 3]}, {"a": [0, 1, 2, 3]}),
+            ("02", {"b": [0, 1]}, {"c": [0, 1]}, {"b": [0, 1], "c": [0, 1]}),
+            ("03", {"d": [0, 1]}, {"d": [0, 1]}, {"d": [0, 1]}),
+            ("04", {"e": [0, 1]}, {"e": []}, {"e": [0, 1]}),
+            (
+                "02",
+                {"f": [0, 1], "g": [0, 1]},
+                {"f": [2, 3], "g": [2, 3]},
+                {"f": [0, 1, 2, 3], "g": [0, 1, 2, 3]},
+            ),
+        ],
+        ["id", "map1", "map2", "merge"],
+    )
+
+    # NOTE(Riley): The sorted function was not working because the MapTypeColumn returns
+    # a dictionary via .collect() and '<' is not supported between instances of dicts
+    assert exp.collect() == res.collect()
