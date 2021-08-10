@@ -82,7 +82,8 @@ def condense_segments(
     )
 
     if retain_shape:
-        retained_sdf = df.join(
+        retained_sdf = (
+            df.join(
             condensed_segments_sdf.select(
                 *group_col,
                 F.col(start_dt_col).alias("_start_dt_new"),
@@ -90,6 +91,15 @@ def condense_segments(
             ),
             group_col,
             "left",
+            )
+            .filter(
+                F.col(start_dt_col).between(
+                    F.col("_start_dt_new"), F.col("_end_dt_new")
+                )
+            )
+            .drop(start_dt_col, end_dt_col)
+            .withColumnRenamed("_start_dt_new", start_dt_col)
+            .withColumnRenamed("_end_dt_new", end_dt_col)
         )
         return set_column_order(retained_sdf, df.columns)
     else:
