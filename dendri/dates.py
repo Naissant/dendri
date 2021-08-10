@@ -16,6 +16,7 @@ def condense_segments(
     start_dt_col: str,
     end_dt_col: str,
     tolerance: int = 1,
+    retain_shape: bool = True,
 ) -> DataFrame:
     """
     Combines overlapping start and end dates according to the allowable tolerance for
@@ -27,6 +28,9 @@ def condense_segments(
         start_dt_col: Name of the start date column from df.
         end_dt_col: Name of the end date column from df.
         tolerance: The allowable number of days between segments.
+        retain_shape: Retain original column and row counts.
+            Default: True
+            False will return distinct `group_col`, `start_dt_col`, `end_dt_col`.
 
     Returns:
         Input DataFrame with updated user-supplied start_dt_col, end_dt_col
@@ -50,7 +54,7 @@ def condense_segments(
         [F.col(x) for x in (group_col + ["_group_id"])]
     )
 
-    return (
+    condensed_segments_sdf = (
         df.withColumn(
             "_group_id",
             F.when(
@@ -73,7 +77,23 @@ def condense_segments(
         .withColumnRenamed("_new_start", start_dt_col)
         .withColumnRenamed("_new_end", end_dt_col)
         .orderBy([x for x in (group_col + [start_dt_col] + [end_dt_col])])
+        .select(*group_col, start_dt_col, end_dt_col)
+        .distinct()
     )
+
+    if retain_shape:
+        retained_sdf = df.join(
+            condensed_segments_sdf.select(
+                *group_col,
+                F.col(start_dt_col).alias("_start_dt_new"),
+                F.col(end_dt_col).alias("_end_dt_new"),
+            ),
+            group_col,
+            "left",
+        )
+        return set_column_order(retained_sdf, df.columns)
+    else:
+        return condensed_segments_sdf
 
 
 def extend_segments(
