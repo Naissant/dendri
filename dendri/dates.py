@@ -33,7 +33,9 @@ def condense_segments(
             False will return distinct `group_col`, `start_dt_col`, `end_dt_col`.
 
     Returns:
-        Input DataFrame with updated user-supplied start_dt_col, end_dt_col
+        Input Dataframe with two additional date cols
+                                or 
+        DataFrame with distinct updated user-supplied start_dt_col, end_dt_col
     """
 
     # Treat group_col as list in all cases
@@ -73,37 +75,24 @@ def condense_segments(
         )
         .withColumn("_new_start", F.min(F.col(start_dt_col)).over(win_spec_condense))
         .withColumn("_new_end", F.max(F.col(end_dt_col)).over(win_spec_condense))
-        .drop(start_dt_col, end_dt_col, "_group_id")
-        .withColumnRenamed("_new_start", start_dt_col)
-        .withColumnRenamed("_new_end", end_dt_col)
+        .drop("_group_id")
+        .withColumnRenamed("_new_start", f"condense_{start_dt_col}")
+        .withColumnRenamed("_new_end",  f"condense_{end_dt_col}")
         .orderBy([x for x in (group_col + [start_dt_col] + [end_dt_col])])
-        .select(*group_col, start_dt_col, end_dt_col)
-        .distinct()
     )
 
     if retain_shape:
-        retained_sdf = (
-            df.join(
+        return condensed_segments_sdf
+    else:
+        dis_condensed_sdf = (
             condensed_segments_sdf.select(
                 *group_col,
-                F.col(start_dt_col).alias("_start_dt_new"),
-                F.col(end_dt_col).alias("_end_dt_new"),
-            ),
-            group_col,
-            "left",
+                start_dt_col,
+                end_dt_col,
             )
-            .filter(
-                F.col(start_dt_col).between(
-                    F.col("_start_dt_new"), F.col("_end_dt_new")
-                )
-            )
-            .drop(start_dt_col, end_dt_col)
-            .withColumnRenamed("_start_dt_new", start_dt_col)
-            .withColumnRenamed("_end_dt_new", end_dt_col)
+            .distinct()
         )
-        return set_column_order(retained_sdf, df.columns)
-    else:
-        return condensed_segments_sdf
+        return dis_condensed_sdf
 
 
 def extend_segments(
