@@ -34,7 +34,7 @@ def condense_segments(
 
     Returns:
         Input Dataframe with two additional date cols
-                                or 
+                                or
         DataFrame with distinct updated user-supplied start_dt_col, end_dt_col
     """
 
