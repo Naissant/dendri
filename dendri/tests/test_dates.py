@@ -637,7 +637,9 @@ def test_first_event_in_x_days(spark_context):
     assert sorted(res.collect()) == sorted(input_df.collect())
 
 
-def test_count_events_by_period(spark_context,):
+def test_count_events_by_period(
+    spark_context,
+):
     input_df = spark_context.createDataFrame(
         [
             ("001", "A", d("2018-01-01")),
