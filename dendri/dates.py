@@ -77,21 +77,16 @@ def condense_segments(
         .withColumn("_new_end", F.max(F.col(end_dt_col)).over(win_spec_condense))
         .drop("_group_id")
         .withColumnRenamed("_new_start", f"condense_{start_dt_col}")
-        .withColumnRenamed("_new_end",  f"condense_{end_dt_col}")
+        .withColumnRenamed("_new_end", f"condense_{end_dt_col}")
         .orderBy([x for x in (group_col + [start_dt_col] + [end_dt_col])])
     )
 
     if retain_shape:
         return condensed_segments_sdf
     else:
-        dis_condensed_sdf = (
-            condensed_segments_sdf.select(
-                *group_col,
-                start_dt_col,
-                end_dt_col,
-            )
-            .distinct()
-        )
+        dis_condensed_sdf = condensed_segments_sdf.select(
+            *group_col, start_dt_col, end_dt_col
+        ).distinct()
         return dis_condensed_sdf
 
 
@@ -162,7 +157,7 @@ def extend_segments(
         .agg(
             F.array_sort(F.collect_list(F.array(start_dt_col, end_dt_col))).alias(
                 "_input_segments_array"
-            ),
+            )
         )
         .withColumn(
             "_new_segments",
@@ -336,10 +331,7 @@ def covered_days(
 
 
 def first_event_in_x_days(
-    df: DataFrame,
-    group_col: Union[str, List[str]],
-    start_dt_col: str,
-    days: int,
+    df: DataFrame, group_col: Union[str, List[str]], start_dt_col: str, days: int
 ) -> DataFrame:
     """
     Identify the first valid event in an x-day period. Identify invalid events that are
@@ -482,9 +474,7 @@ def count_events_by_period(
 
 
 def age(
-    dob_col: str,
-    age_dt: Union[str, date, Column],
-    floor_sw: bool = True,
+    dob_col: str, age_dt: Union[str, date, Column], floor_sw: bool = True
 ) -> Column:
     """
     Calculate age.
