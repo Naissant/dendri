@@ -224,6 +224,46 @@ class TestCondenseSegments:
         ],
     )
 
+    output_df_tolerance_1_no_retain = (
+        [
+            (
+                "001",
+                d("2017-01-01"),
+                d("2017-01-02"),
+            ),
+            (
+                "001",
+                d("2018-01-01"),
+                d("2018-01-20"),
+            ),
+            (
+                "002",
+                d("2018-02-01"),
+                d("2018-02-20"),
+            ),
+            (
+                "003",
+                d("2018-03-01"),
+                d("2018-03-15"),
+            ),
+            (
+                "003",
+                d("2018-03-17"),
+                d("2018-03-20"),
+            ),
+            (
+                "004",
+                d("2019-08-01"),
+                d("2019-08-15"),
+            ),
+        ],
+        [
+            "entity_id",
+            "start_dt",
+            "end_dt",
+        ],
+    )
+
     output_df_org = (
         [
             (
@@ -318,18 +358,52 @@ class TestCondenseSegments:
     )
 
     @pytest.mark.parametrize(
-        "df, group_col, start_dt_col, end_dt_col, tolerance, expected_output",
+        "df,group_col,start_dt_col,end_dt_col,tolerance,retain_shape,expected_output",
         [
-            (input_df, "entity_id", "start_dt", "end_dt", 1, output_df_tolerance_1),
-            (input_df, "entity_id", "start_dt", "end_dt", 2, output_df_tolerance_2),
-            (input_df, ["entity_id"], "start_dt", "end_dt", 1, output_df_tolerance_1),
+            (
+                input_df,
+                "entity_id",
+                "start_dt",
+                "end_dt",
+                1,
+                True,
+                output_df_tolerance_1,
+            ),
+            (
+                input_df,
+                "entity_id",
+                "start_dt",
+                "end_dt",
+                2,
+                True,
+                output_df_tolerance_2,
+            ),
+            (
+                input_df,
+                ["entity_id"],
+                "start_dt",
+                "end_dt",
+                1,
+                True,
+                output_df_tolerance_1,
+            ),
             (
                 input_df,
                 ["entity_id", "iterator"],
                 "start_dt",
                 "end_dt",
                 1,
+                True,
                 output_df_org,
+            ),
+            (
+                input_df,
+                "entity_id",
+                "start_dt",
+                "end_dt",
+                1,
+                False,
+                output_df_tolerance_1_no_retain,
             ),
         ],
     )
@@ -341,6 +415,7 @@ class TestCondenseSegments:
         start_dt_col,
         end_dt_col,
         tolerance,
+        retain_shape,
         expected_output,
     ):
         res = condense_segments(
@@ -349,6 +424,7 @@ class TestCondenseSegments:
             start_dt_col,
             end_dt_col,
             tolerance,
+            retain_shape,
         )
 
         exp = spark_context.createDataFrame(*expected_output)

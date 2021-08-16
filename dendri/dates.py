@@ -81,13 +81,14 @@ def condense_segments(
         .orderBy([x for x in (group_col + [start_dt_col] + [end_dt_col])])
     )
 
-    if retain_shape:
-        return condensed_segments_sdf
-    else:
-        dis_condensed_sdf = condensed_segments_sdf.select(
-            *group_col, start_dt_col, end_dt_col
+    if not retain_shape:
+        condensed_segments_sdf = condensed_segments_sdf.select(
+            *group_col,
+            F.col(f"condense_{start_dt_col}").alias(start_dt_col),
+            F.col(f"condense_{end_dt_col}").alias(end_dt_col),
         ).distinct()
-        return dis_condensed_sdf
+
+    return condensed_segments_sdf
 
 
 def extend_segments(
