@@ -16,7 +16,7 @@ setup(
     description="Library for common healthcare related algorithms.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/GDITHealth/dendri",
+    url="https://github.com/Naissant/dendri",
     license="MIT",
     packages=["dendri"],
     install_requires=["pyspark>=3.1.1", "python-dateutil"],

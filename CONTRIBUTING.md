@@ -3,7 +3,7 @@
 ## Development Install
 
 ```bash
-git clone https://github.com/GDITHealth/dendri
+git clone https://github.com/Naissant/dendri
 pip install -e .[dev]
 ```
 
