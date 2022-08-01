@@ -254,7 +254,7 @@ class TestValidateSchema:
             validate_schema(source_df, required_schema)
         assert excinfo.value.args[0] == (
             "The following StructFields are not included in the DataFrame:"
-            " [StructField(city,StringType,true)]"
+            " [StructField('city', StringType(), True)]"
         )
 
     def test_it_does_nothing_when_the_schema_matches(self, spark_context):
@@ -672,11 +672,11 @@ def test_data_template_from_schema(spark_context):
         "ArrayType(String), BinaryType, BooleanType, ByteType, DateType, DecimalType, "
         "DoubleType, FloatType, FractionalType, IntegerType, IntegralType, LongType, "
         "MapType, NullType, NumericType, StringType, StructType, TimestampType, "
-        "UserDefinedType, ShortType\n"
-        '(["String?"], b"", True False, ByteType, date.fromisoformat(""), '
-        "DecimalType(10,0), DoubleType, FloatType, FractionalType, IntegerType, "
-        'IntegralType, LongType, {"": ""}, None, NumericType, "String", {"": ""}, '
-        'datetime.fromisoformat(""), UDT(), ShortType)'
+        'UserDefinedType, ShortType\n(["String?"], b"", True False, ByteType(), '
+        'date.fromisoformat(""), DecimalType(10,0), DoubleType(), FloatType(), '
+        'FractionalType(), IntegerType(), IntegralType(), LongType(), {"": ""}, None, '
+        'NumericType(), "String", {"": ""}, datetime.fromisoformat(""), UDT(), '
+        "ShortType())"
     )
     res = data_template_from_schema(schema)
     assert res == exp
