@@ -8,36 +8,15 @@ on:
 jobs:
   publish-pypi-test:
     name: Build and Publish to Test PyPI
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
 
-      - name: Install build tools
-        run: >-
-          python -m
-          pip install
-          build
-
-      - name: Build a binary wheel and a source tarball
-        run: >-
-          python -m
-          build
-          --sdist
-          --wheel
-          --outdir dist/
-          .
-
-      - name: github.ref
-        run: |
-          echo "github.ref: ${{ github.ref }}"
+      - name: Build wheel and sdist
+        run: uv build
 
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@v1.4.2
@@ -48,52 +27,30 @@ jobs:
   install-pypi-test:
     name: Install from Test PyPI
     needs: publish-pypi-test
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: pip install dendri
+      - uses: astral-sh/setup-uv@v5
+      - name: pip install dendri from Test PyPI
         run: >-
-          python -m
-          pip install
+          uv pip install
           --index-url https://test.pypi.org/simple
           --extra-index-url https://pypi.org/simple
           dendri
       - name: Test dendri install
-        run: |
-          echo "import dendri" | python
+        run: uv run python -c "import dendri"
 
   publish-pypi-prod:
     name: Build and Publish to Prod PyPI
     needs: install-pypi-test
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
 
-      - name: Install build tools
-        run: >-
-          python -m
-          pip install
-          build
-
-      - name: Build a binary wheel and a source tarball
-        run: >-
-          python -m
-          build
-          --sdist
-          --wheel
-          --outdir dist/
-          .
+      - name: Build wheel and sdist
+        run: uv build
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.4.2
@@ -103,15 +60,10 @@ jobs:
   install-pypi-prod:
     name: Install from Prod PyPI
     needs: publish-pypi-prod
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
+      - uses: astral-sh/setup-uv@v5
       - name: pip install dendri
-        run: |
-          pip install dendri
+        run: uv pip install dendri
       - name: Test dendri install
-        run: |
-          echo "import dendri" | python
+        run: uv run python -c "import dendri"

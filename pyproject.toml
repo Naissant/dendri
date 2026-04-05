@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dendri"
+dynamic = ["version"]
+description = "Library for common healthcare related algorithms."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Dendri Authors", email = "wesr000@gmail.com" }]
+requires-python = ">=3.8"
+dependencies = ["pyspark>=3.1.1", "python-dateutil"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "ty", "pre-commit"]
+
+[project.urls]
+Homepage = "https://github.com/Naissant/dendri"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+enable = true
+
+[tool.uv]
+dev-dependencies = ["pytest", "ruff", "ty", "pre-commit"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dendri"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E203"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

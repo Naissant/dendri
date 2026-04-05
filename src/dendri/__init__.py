@@ -6,7 +6,9 @@ from . import utils
 # Shortcut specific functionality
 from dendri.dataframe import SparkSession, DataFrame
 
-from ._version import get_versions
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = get_versions()["version"]
-del get_versions
+try:
+    __version__ = version("dendri")
+except PackageNotFoundError:
+    __version__ = "unknown"
