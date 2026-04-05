@@ -28,7 +28,7 @@ from pyspark.sql.types import (
     ShortType,
 )
 
-from dendri.conftest import ensure_clean_dir
+from conftest import ensure_clean_dir
 from dendri.dataframe import (
     cols_to_array,
     cols_to_dict,
