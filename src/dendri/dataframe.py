@@ -338,7 +338,7 @@ def set_column_order(
     if not isinstance(df, DataFrame):
         raise TypeError("df must be a Spark DataFrame.")
     if not isinstance(column_order, list):
-        raise TypeError("column_order must be a list" f"{column_order} was supplied")
+        raise TypeError(f"column_order must be a list{column_order} was supplied")
     if not isinstance(remove_unlisted, bool):
         raise TypeError("remove_unlisted must be a bool")
 

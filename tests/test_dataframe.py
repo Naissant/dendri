@@ -77,7 +77,6 @@ def test_show_by_type():
 
 
 class TestColsToArray:
-
     input_data = [
         ("001", "11", "12", ["11", "12"]),
         ("002", "11", None, ["11"]),
@@ -156,7 +155,7 @@ class TestColsToArray:
             [
                 ("1", 1, 2, {"a": 5}, [1, 5]),
                 ("2", 1, 2, {"a": 6}, [1, 6]),
-                ("3", 1, 2, {"b": 7}, [1])
+                ("3", 1, 2, {"b": 7}, [1]),
                 # black ..............
             ],
             StructType(
@@ -311,7 +310,6 @@ def test_string_to_column_name():
 def test_stage_dataframe_to_disk_function(spark_context):
 
     with ensure_clean_dir() as tmpdir:
-
         tmpdir = Path(tmpdir)
         tmp_parquet_path = tmpdir / "tmp.parquet"
 
@@ -326,14 +324,13 @@ def test_stage_dataframe_to_disk_function(spark_context):
 
         assert tmp_parquet_path.exists()
         assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), F.DataFrame
+            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
         )
 
 
 def test_stage_dataframe_to_disk_method(spark_context):
 
     with ensure_clean_dir() as tmpdir:
-
         tmpdir = Path(tmpdir)
         tmp_parquet_path = tmpdir / "tmp.parquet"
 
@@ -349,7 +346,7 @@ def test_stage_dataframe_to_disk_method(spark_context):
 
         assert tmp_parquet_path.exists()
         assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), F.DataFrame
+            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
         )
 
 
@@ -450,7 +447,7 @@ def test_saveParquetTable(spark_context):
 
         assert tmp_parquet_path.exists()
         assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), F.DataFrame
+            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
         )
 
         # Acutal metadata
@@ -531,7 +528,6 @@ def test_readParquetTable_no_bucket(spark_context):
 
 
 class TestGetDataFrame:
-
     dataframe = {
         "data": [(1, 2, 3), (1, 2, 4), (2, 3, 1), (3, 3, 1)],
         "schema": ["col1", "col2", "col3"],
