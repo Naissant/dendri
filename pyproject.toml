@@ -9,7 +9,7 @@ description = "Library for common healthcare related algorithms."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Dendri Authors", email = "wesr000@gmail.com" }]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = ["pyspark>=3.1.1", "python-dateutil"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -17,10 +17,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [project.optional-dependencies]

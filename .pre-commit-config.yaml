@@ -1,14 +1,8 @@
 fail_fast: true
 repos:
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.9
     hooks:
-    - id: ruff-lint
-      name: ruff lint
-      entry: ruff check --fix
-      language: system
-      types: [python]
-    - id: ruff-format
-      name: ruff format
-      entry: ruff format
-      language: system
-      types: [python]
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
