@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "ty", "pre-commit"]
+dev = ["pytest", "ruff==0.15.9", "ty", "pre-commit"]
 
 [project.urls]
 Homepage = "https://github.com/Naissant/dendri"
@@ -36,7 +36,7 @@ source = "uv-dynamic-versioning"
 enable = true
 
 [tool.uv]
-dev-dependencies = ["pytest", "ruff", "ty", "pre-commit"]
+dev-dependencies = ["pytest", "ruff==0.15.9", "ty", "pre-commit"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dendri"]

@@ -74,7 +74,7 @@ requires-dist = [
     { name = "pyspark", specifier = ">=3.1.1" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "python-dateutil" },
-    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.9" },
     { name = "ty", marker = "extra == 'dev'" },
 ]
 provides-extras = ["dev"]
@@ -83,7 +83,7 @@ provides-extras = ["dev"]
 dev = [
     { name = "pre-commit" },
     { name = "pytest" },
-    { name = "ruff" },
+    { name = "ruff", specifier = "==0.15.9" },
     { name = "ty" },
 ]
 
