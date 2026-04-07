@@ -323,9 +323,7 @@ def test_stage_dataframe_to_disk_function(spark_context):
         tmp_sdf(overwrite=True)
 
         assert tmp_parquet_path.exists()
-        assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
-        )
+        assert isinstance(spark_context.read.parquet(str(tmp_parquet_path)), DataFrame)
 
 
 def test_stage_dataframe_to_disk_method(spark_context):
@@ -345,9 +343,7 @@ def test_stage_dataframe_to_disk_method(spark_context):
         TestProcess().tmp_sdf(overwrite=True)
 
         assert tmp_parquet_path.exists()
-        assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
-        )
+        assert isinstance(spark_context.read.parquet(str(tmp_parquet_path)), DataFrame)
 
 
 def test_set_column_order(spark_context):
@@ -446,9 +442,7 @@ def test_saveParquetTable(spark_context):
         }
 
         assert tmp_parquet_path.exists()
-        assert isinstance(
-            spark_context.read.parquet(str(tmp_parquet_path)), DataFrame
-        )
+        assert isinstance(spark_context.read.parquet(str(tmp_parquet_path)), DataFrame)
 
         # Acutal metadata
         with open(tmp_parquet_path / "_dendri_metadata", "r") as f:
